@@ -9,7 +9,10 @@ describe('PokemonService', () => {
 
   const dbMock = {
     select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockResolvedValue([]),
+    from: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    offset: jest.fn().mockResolvedValue([]),
     insert: jest.fn().mockReturnThis(),
     values: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue([{ id: 1 }]),
@@ -40,12 +43,20 @@ describe('PokemonService', () => {
     expect(service).toBeDefined();
   });
 
-  it('findAll returns array', async () => {
-    dbMock.from.mockResolvedValueOnce([{ id: 1 }]);
-    const res = await service.findAll();
+  it('findAll returns paginated response', async () => {
+    dbMock.orderBy.mockReturnThis();
+    dbMock.offset.mockResolvedValueOnce([{ id: 1 }]);
+    dbMock.select.mockReturnValueOnce({ count: jest.fn().mockReturnValue(100) }).mockReturnThis();
+    dbMock.from.mockResolvedValueOnce([{ count: 100 }]);
+    
+    const res = await service.findAll(1, 20);
     expect(dbMock.select).toHaveBeenCalled();
-    expect(dbMock.from).toHaveBeenCalledWith(pokemonTable);
-    expect(res).toEqual([{ id: 1 }]);
+    expect(dbMock.orderBy).toHaveBeenCalled();
+    expect(dbMock.limit).toHaveBeenCalledWith(20);
+    expect(dbMock.offset).toHaveBeenCalledWith(0);
+    expect(res.data).toEqual([{ id: 1 }]);
+    expect(res.meta.page).toBe(1);
+    expect(res.meta.limit).toBe(20);
   });
 
   it('findById uses query.findFirst', async () => {

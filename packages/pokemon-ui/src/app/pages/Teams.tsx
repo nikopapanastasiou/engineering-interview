@@ -2,23 +2,11 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTeams } from '../state/teams';
 import { Button, Card, Container, ErrorText, Grid, Heading, Input, Text } from '../components/ui';
 import { PokemonDetail } from '../components/PokemonDetail';
-import { Overlay, Modal, CloseButton, PokemonId, RemoveButton, TypeBadge, Section, SectionTitle, COLORS } from '../components/shared';
 import { api } from '../api/client';
-import styled from '@emotion/styled';
+import { Pokemon } from '../types/pokemon';
+import styled, { css } from '@emotion/styled';
 
-type Pokemon = {
-  id: number;
-  name: string;
-  height?: number;
-  weight?: number;
-  base_experience?: number;
-  types?: string[];
-  abilities?: string[];
-  stats?: Record<string, number>;
-  sprites?: any;
-};
-
-const TeamCard = styled(Card)<{ hasWarning?: boolean }>`
+const teamCardCss = css`
   cursor: pointer;
   transition: all 0.2s;
   border: 2px solid ${({ hasWarning }) => (hasWarning ? COLORS.warning : COLORS.gray200)};
@@ -277,8 +265,9 @@ export function TeamsPage() {
   useEffect(() => {
     if (showAddModal && allPokemon.length === 0) {
       setLoadingPokemon(true);
-      api<Pokemon[]>('/pokemon')
-        .then((data) => setAllPokemon(data))
+      // Fetch all pokemon with a large limit for the modal
+      api<{ data: Pokemon[]; meta: any }>('/pokemon?limit=1000')
+        .then((response) => setAllPokemon(response.data))
         .catch((err) => setError(err?.message || 'Failed to load pokemon'))
         .finally(() => setLoadingPokemon(false));
     }

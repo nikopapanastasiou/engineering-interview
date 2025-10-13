@@ -1,22 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { api } from '../api/client';
+import { useMemo, useState, useEffect } from 'react';
+import { useInView } from 'react-intersection-observer';
+import { Grid, Card, Text, Input, Container, Heading, ErrorText } from '../components/ui';
 import { useTeams } from '../state/teams';
-import { Button, Card, Container, ErrorText, Grid, Heading, Input, Text } from '../components/ui';
+import { api } from '../api/client';
 import { PokemonDetail } from '../components/PokemonDetail';
 import { PokemonImage, PokemonName, PokemonId, TypeBadge } from '../components/shared';
+import { Pokemon, PaginatedResponse } from '../types/pokemon';
 import styled from '@emotion/styled';
-
-type Pokemon = {
-  id: number;
-  name: string;
-  height?: number;
-  weight?: number;
-  base_experience?: number;
-  types?: string[];
-  abilities?: string[];
-  stats?: Record<string, number>;
-  sprites?: any;
-};
 
 const PokemonCard = styled(Card)`
   display: flex;
@@ -36,25 +26,48 @@ const PokemonCard = styled(Card)`
 export function SearchPage() {
   const { addMember, currentTeamId, teams } = useTeams();
   const [all, setAll] = useState<Pokemon[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
+  
+  // Intersection observer for infinite scroll
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px',
+  });
 
+  // Load Pokemon data
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setError(null);
-    api<Pokemon[]>('/pokemon')
-      .then((data) => {
-        if (mounted) setAll(data);
+    api<PaginatedResponse<Pokemon>>(`/pokemon?page=${page}&limit=50`)
+      .then((response) => {
+        if (mounted) {
+          setAll((prev) => page === 1 ? response.data : [...prev, ...response.data]);
+          setHasMore(response.meta.hasNextPage);
+          setTotal(response.meta.total);
+          setInitialLoad(false);
+        }
       })
       .catch((err) => setError(err?.message || 'Failed to load pokemon'))
       .finally(() => setLoading(false));
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [page]);
+  
+  // Trigger load more when scroll sentinel is in view (but not on initial load)
+  useEffect(() => {
+    if (!initialLoad && inView && hasMore && !loading) {
+      setPage((p) => p + 1);
+    }
+  }, [inView, hasMore, loading, initialLoad]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -84,7 +97,8 @@ export function SearchPage() {
         onChange={(e) => setQ(e.target.value)}
         style={{ maxWidth: 400, marginBottom: 16 }}
       />
-      {loading && <Text>Loading…</Text>}
+      {total > 0 && <Text style={{ marginBottom: 12 }}>Showing {all.length} of {total} Pokémon</Text>}
+      {loading && page === 1 && <Text>Loading…</Text>}
       {error && <ErrorText>{error}</ErrorText>}
       <Grid cols={180}>
         {filtered.map((p) => {
@@ -105,12 +119,26 @@ export function SearchPage() {
           );
         })}
       </Grid>
+      
+      {/* Infinite scroll sentinel - only show after initial load */}
+      {!initialLoad && hasMore && all.length > 0 && (
+        <div ref={loadMoreRef} style={{ height: 20, margin: '24px 0' }}>
+          {loading && (
+            <Text style={{ textAlign: 'center' }}>Loading more Pokémon...</Text>
+          )}
+        </div>
+      )}
+      
+      {!hasMore && all.length > 0 && (
+        <Text style={{ textAlign: 'center', marginTop: 24, color: '#9ca3af' }}>
+          You've reached the end! All {total} Pokémon loaded.
+        </Text>
+      )}
       {selectedPokemon && (
         <PokemonDetail
           pokemon={selectedPokemon}
           teamsContaining={getTeamsContaining(selectedPokemon.id)}
           onClose={() => setSelectedPokemon(null)}
-          onAddToTeam={currentTeamId ? () => addToTeam(selectedPokemon) : undefined}
         />
       )}
     </Container>

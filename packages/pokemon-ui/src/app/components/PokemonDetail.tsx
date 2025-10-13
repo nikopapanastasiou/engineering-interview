@@ -1,18 +1,7 @@
 import styled from '@emotion/styled';
 import { Button } from './ui';
 import { Overlay, Modal, CloseButton, Section, SectionTitle, TypeBadge, TYPE_COLORS, COLORS } from './shared';
-
-type Pokemon = {
-  id: number;
-  name: string;
-  height?: number;
-  weight?: number;
-  base_experience?: number;
-  types?: string[];
-  abilities?: string[];
-  stats?: Record<string, number>;
-  sprites?: any;
-};
+import { Pokemon } from '../types/pokemon';
 
 
 const Header = styled.div`
@@ -160,8 +149,13 @@ export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToT
         <Header>
           <SpriteImage src={spriteUrl} alt={pokemon.name} />
           <HeaderInfo>
-            <PokemonName>{pokemon.name}</PokemonName>
+            <PokemonName>
+              {pokemon.name}
+              {pokemon.isLegendary && ' ⭐'}
+              {pokemon.isMythical && ' ✨'}
+            </PokemonName>
             <PokemonId>#{pokemon.id.toString().padStart(3, '0')}</PokemonId>
+            {pokemon.genus && <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '8px' }}>{pokemon.genus}</div>}
             <div>
               {pokemon.types?.map((t) => (
                 <DetailTypeBadge key={t} type={t}>
@@ -171,6 +165,15 @@ export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToT
             </div>
           </HeaderInfo>
         </Header>
+
+        {pokemon.description && (
+          <Section>
+            <SectionTitle>Description</SectionTitle>
+            <div style={{ fontSize: '14px', lineHeight: '1.6', color: COLORS.textSecondary }}>
+              {pokemon.description}
+            </div>
+          </Section>
+        )}
 
         <Section>
           <SectionTitle>Info</SectionTitle>
@@ -182,8 +185,23 @@ export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToT
               Weight: <span>{pokemon.weight ? `${(pokemon.weight / 10).toFixed(1)} kg` : 'N/A'}</span>
             </InfoItem>
             <InfoItem>
-              Base XP: <span>{pokemon.base_experience ?? 'N/A'}</span>
+              Base XP: <span>{pokemon.baseExperience ?? 'N/A'}</span>
             </InfoItem>
+            {pokemon.generation && (
+              <InfoItem>
+                Generation: <span style={{ textTransform: 'capitalize' }}>{pokemon.generation.replace('generation-', 'Gen ')}</span>
+              </InfoItem>
+            )}
+            {pokemon.habitat && (
+              <InfoItem>
+                Habitat: <span style={{ textTransform: 'capitalize' }}>{pokemon.habitat}</span>
+              </InfoItem>
+            )}
+            {pokemon.captureRate !== null && pokemon.captureRate !== undefined && (
+              <InfoItem>
+                Capture Rate: <span>{pokemon.captureRate}/255</span>
+              </InfoItem>
+            )}
           </InfoGrid>
         </Section>
 

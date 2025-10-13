@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, text, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const pokemonTable = pgTable('pokemon', {
@@ -17,6 +17,20 @@ export const pokemonTable = pgTable('pokemon', {
     .default(sql`'{}'::text[]`),
   stats: jsonb('stats'),
   sprites: jsonb('sprites'),
+  
+  // Enhanced fields from species data
+  description: text('description'),
+  genus: text('genus'),
+  generation: text('generation'),
+  habitat: text('habitat'),
+  shape: text('shape'),
+  color: text('color'),
+  isLegendary: boolean('is_legendary').default(false),
+  isMythical: boolean('is_mythical').default(false),
+  evolutionChainId: integer('evolution_chain_id'),
+  captureRate: integer('capture_rate'),
+  baseHappiness: integer('base_happiness'),
+  growthRate: text('growth_rate'),
 });
 
 export type Pokemon = typeof pokemonTable.$inferSelect;
