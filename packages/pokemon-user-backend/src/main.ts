@@ -17,6 +17,15 @@ async function bootstrap() {
 
   await startDatabase();
   const app = await NestFactory.create(AppModule);
+  
+  // Enable CORS for frontend
+  app.enableCors({
+    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+  
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const port = 3000;
