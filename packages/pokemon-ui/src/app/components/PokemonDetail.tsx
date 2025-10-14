@@ -1,129 +1,147 @@
 import styled from '@emotion/styled';
-import { Button } from './ui';
-import { Overlay, Modal, CloseButton, Section, SectionTitle, TypeBadge, TYPE_COLORS, COLORS } from './shared';
+import { Button, Heading, Text } from './ui';
+import { Overlay, Modal, TypeBadge, COLORS } from './shared';
+import { CloseIcon, StarIcon, DiamondIcon } from './icons';
 import { Pokemon } from '../types/pokemon';
 
-
+// Layout components
 const Header = styled.div`
   display: flex;
-  align-items: center;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 24px;
   margin-bottom: 24px;
 `;
 
-const SpriteImage = styled.img`
+const PokemonImage = styled.img`
   width: 120px;
   height: 120px;
   object-fit: contain;
+  flex-shrink: 0;
 `;
 
-const HeaderInfo = styled.div`
+const HeaderContent = styled.div`
   flex: 1;
+  min-width: 0;
 `;
 
-const PokemonName = styled.h2`
-  font-size: 28px;
-  font-weight: 700;
-  color: ${COLORS.textPrimary};
+const PokemonTitle = styled(Heading)`
+  font-size: 24px;
+  margin: 0 0 4px 0;
   text-transform: capitalize;
-  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
-const PokemonId = styled.div`
-  font-size: 14px;
+const PokemonNumber = styled.span`
   color: ${COLORS.textSecondary};
-  margin-bottom: 12px;
+  font-weight: 400;
 `;
 
-const DetailTypeBadge = styled(TypeBadge)`
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  margin-right: 6px;
+const PokemonSubtitle = styled(Text)`
+  font-size: 16px;
+  color: ${COLORS.textSecondary};
+  margin: 0 0 12px 0;
 `;
 
+const TypeBadges = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
 
-const StatBar = styled.div`
+const InfoSection = styled.div`
+  margin-bottom: 24px;
+`;
+
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const InfoItem = styled(Text)`
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid ${COLORS.gray200};
+  
+  strong {
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const StatGrid = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const StatItem = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
 `;
 
-const StatName = styled.div`
-  min-width: 120px;
-  font-size: 14px;
-  color: ${COLORS.textSecondary};
-  text-transform: capitalize;
-`;
-
-const StatValue = styled.div`
-  min-width: 40px;
+const StatName = styled(Text)`
+  min-width: 100px;
+  font-size: 12px;
   font-weight: 600;
-  color: ${COLORS.textPrimary};
-  font-size: 14px;
+  text-transform: uppercase;
+  color: ${COLORS.textSecondary};
 `;
 
-const StatBarBg = styled.div`
+const StatBar = styled.div<{ value: number }>`
   flex: 1;
   height: 8px;
   background: ${COLORS.gray200};
   border-radius: 4px;
   overflow: hidden;
-`;
-
-const StatBarFill = styled.div<{ percent: number }>`
-  height: 100%;
-  background: linear-gradient(90deg, ${COLORS.secondary}, ${COLORS.primary});
-  width: ${({ percent }) => percent}%;
-  transition: width 0.3s;
-`;
-
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-`;
-
-const InfoItem = styled.div`
-  font-size: 14px;
-  color: ${COLORS.textSecondary};
-  span {
-    font-weight: 600;
-    color: ${COLORS.textPrimary};
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: ${({ value }) => Math.min(value / 255 * 100, 100)}%;
+    background: linear-gradient(90deg, 
+      ${COLORS.error} 0%, 
+      ${COLORS.warning} 50%, 
+      ${COLORS.success} 100%
+    );
+    border-radius: 4px;
   }
 `;
 
-const AbilityList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const AbilityBadge = styled.span`
-  padding: 6px 12px;
-  background: #E3F2FD;
-  border: 1px solid ${COLORS.secondary};
-  border-radius: 6px;
-  font-size: 13px;
-  color: ${COLORS.secondary};
+const StatValue = styled(Text)`
+  min-width: 30px;
   font-weight: 600;
-  text-transform: capitalize;
+  text-align: right;
+  color: ${COLORS.textPrimary};
 `;
 
-const TeamsList = styled.div`
+const CloseButton = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${COLORS.gray500};
+  width: 32px;
+  height: 32px;
   display: flex;
-  gap: 8px;
-`;
-
-const TeamBadge = styled.span`
-  padding: 6px 12px;
-  background: #E8F5E9;
-  border: 1px solid ${COLORS.success};
-  border-radius: 6px;
-  font-size: 13px;
-  color: ${COLORS.success};
-  font-weight: 600;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${COLORS.gray100};
+    color: ${COLORS.gray700};
+  }
 `;
 
 type Props = {
@@ -139,113 +157,128 @@ export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToT
     pokemon.sprites?.front_default ||
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
 
-  const maxStat = 255;
-
   return (
     <Overlay onClick={onClose}>
       <Modal onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>×</CloseButton>
+        <CloseButton onClick={onClose}>
+          <CloseIcon size={18} />
+        </CloseButton>
 
+        {/* Header: Image + Name/Info */}
         <Header>
-          <SpriteImage src={spriteUrl} alt={pokemon.name} />
-          <HeaderInfo>
-            <PokemonName>
+          <PokemonImage src={spriteUrl} alt={pokemon.name} />
+          <HeaderContent>
+            <PokemonTitle>
               {pokemon.name}
-              {pokemon.isLegendary && ' ⭐'}
-              {pokemon.isMythical && ' ✨'}
-            </PokemonName>
-            <PokemonId>#{pokemon.id.toString().padStart(3, '0')}</PokemonId>
-            {pokemon.genus && <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '8px' }}>{pokemon.genus}</div>}
-            <div>
-              {pokemon.types?.map((t) => (
-                <DetailTypeBadge key={t} type={t}>
-                  {t}
-                </DetailTypeBadge>
+              <PokemonNumber>#{pokemon.id.toString().padStart(3, '0')}</PokemonNumber>
+              {pokemon.isLegendary && <StarIcon size={16} />}
+              {pokemon.isMythical && <DiamondIcon size={16} />}
+            </PokemonTitle>
+            
+            {/* Genus subtitle */}
+            {pokemon.genus && (
+              <PokemonSubtitle>{pokemon.genus}</PokemonSubtitle>
+            )}
+            
+            {/* Type badges */}
+            <TypeBadges>
+              {pokemon.types?.map((type) => (
+                <TypeBadge key={type} type={type}>
+                  {type}
+                </TypeBadge>
               ))}
-            </div>
-          </HeaderInfo>
+            </TypeBadges>
+          </HeaderContent>
         </Header>
 
+        {/* Description */}
         {pokemon.description && (
-          <Section>
-            <SectionTitle>Description</SectionTitle>
-            <div style={{ fontSize: '14px', lineHeight: '1.6', color: COLORS.textSecondary }}>
+          <InfoSection>
+            <Text style={{ lineHeight: '1.6', marginBottom: 16 }}>
               {pokemon.description}
-            </div>
-          </Section>
+            </Text>
+          </InfoSection>
         )}
 
-        <Section>
-          <SectionTitle>Info</SectionTitle>
+        {/* Basic Info */}
+        <InfoSection>
           <InfoGrid>
             <InfoItem>
-              Height: <span>{pokemon.height ? `${(pokemon.height / 10).toFixed(1)} m` : 'N/A'}</span>
+              Height <strong>{pokemon.height ? `${(pokemon.height / 10).toFixed(1)} m` : 'N/A'}</strong>
             </InfoItem>
             <InfoItem>
-              Weight: <span>{pokemon.weight ? `${(pokemon.weight / 10).toFixed(1)} kg` : 'N/A'}</span>
+              Weight <strong>{pokemon.weight ? `${(pokemon.weight / 10).toFixed(1)} kg` : 'N/A'}</strong>
             </InfoItem>
             <InfoItem>
-              Base XP: <span>{pokemon.baseExperience ?? 'N/A'}</span>
+              Base XP <strong>{pokemon.baseExperience ?? 'N/A'}</strong>
             </InfoItem>
+            {pokemon.captureRate && (
+              <InfoItem>
+                Capture Rate <strong>{pokemon.captureRate}/255</strong>
+              </InfoItem>
+            )}
             {pokemon.generation && (
               <InfoItem>
-                Generation: <span style={{ textTransform: 'capitalize' }}>{pokemon.generation.replace('generation-', 'Gen ')}</span>
+                Generation <strong>{pokemon.generation.replace('generation-', 'Gen ')}</strong>
               </InfoItem>
             )}
             {pokemon.habitat && (
               <InfoItem>
-                Habitat: <span style={{ textTransform: 'capitalize' }}>{pokemon.habitat}</span>
-              </InfoItem>
-            )}
-            {pokemon.captureRate !== null && pokemon.captureRate !== undefined && (
-              <InfoItem>
-                Capture Rate: <span>{pokemon.captureRate}/255</span>
+                Habitat <strong style={{ textTransform: 'capitalize' }}>{pokemon.habitat}</strong>
               </InfoItem>
             )}
           </InfoGrid>
-        </Section>
+        </InfoSection>
 
+        {/* Base Stats */}
+        {pokemon.stats && (
+          <InfoSection>
+            <Heading as="h3" style={{ fontSize: 16, marginBottom: 16 }}>Base Stats</Heading>
+            <StatGrid>
+              {Object.entries(pokemon.stats).map(([key, value]) => (
+                <StatItem key={key}>
+                  <StatName>{key.replace('-', ' ')}</StatName>
+                  <StatBar value={value} />
+                  <StatValue>{value}</StatValue>
+                </StatItem>
+              ))}
+            </StatGrid>
+          </InfoSection>
+        )}
+
+        {/* Abilities */}
         {pokemon.abilities && pokemon.abilities.length > 0 && (
-          <Section>
-            <SectionTitle>Abilities</SectionTitle>
-            <AbilityList>
-              {pokemon.abilities.map((a) => (
-                <AbilityBadge key={a}>{a.replace('-', ' ')}</AbilityBadge>
+          <InfoSection>
+            <Heading as="h3" style={{ fontSize: 16, marginBottom: 12 }}>Abilities</Heading>
+            <TypeBadges>
+              {pokemon.abilities.map((ability) => (
+                <TypeBadge key={ability} type="normal" style={{ background: COLORS.secondary }}>
+                  {ability}
+                </TypeBadge>
               ))}
-            </AbilityList>
-          </Section>
+            </TypeBadges>
+          </InfoSection>
         )}
 
-        {pokemon.stats && Object.keys(pokemon.stats).length > 0 && (
-          <Section>
-            <SectionTitle>Base Stats</SectionTitle>
-            {Object.entries(pokemon.stats).map(([name, value]) => (
-              <StatBar key={name}>
-                <StatName>{name.replace('-', ' ')}</StatName>
-                <StatValue>{value}</StatValue>
-                <StatBarBg>
-                  <StatBarFill percent={(value / maxStat) * 100} />
-                </StatBarBg>
-              </StatBar>
-            ))}
-          </Section>
-        )}
-
+        {/* Teams */}
         {teamsContaining.length > 0 && (
-          <Section>
-            <SectionTitle>In Your Teams</SectionTitle>
-            <TeamsList>
+          <InfoSection>
+            <Heading as="h3" style={{ fontSize: 16, marginBottom: 12 }}>On Teams</Heading>
+            <TypeBadges>
               {teamsContaining.map((team) => (
-                <TeamBadge key={team}>{team}</TeamBadge>
+                <TypeBadge key={team} type="normal" style={{ background: COLORS.primary }}>
+                  {team}
+                </TypeBadge>
               ))}
-            </TeamsList>
-          </Section>
+            </TypeBadges>
+          </InfoSection>
         )}
 
+        {/* Add to Team Button */}
         {onAddToTeam && (
-          <Button onClick={onAddToTeam} style={{ width: '100%', marginTop: 8 }}>
-            Add to Team
-          </Button>
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Button onClick={onAddToTeam}>Add to Team</Button>
+          </div>
         )}
       </Modal>
     </Overlay>

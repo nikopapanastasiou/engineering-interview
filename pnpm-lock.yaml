@@ -32,6 +32,9 @@ importers:
       '@nestjs/swagger':
         specifier: ^11.2.0
         version: 11.2.0(@nestjs/common@11.1.6)(@nestjs/core@11.1.6)(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)
+      '@tanstack/react-query':
+        specifier: ^5.90.3
+        version: 5.90.3(react@18.3.1)
       axios:
         specifier: ^1.6.0
         version: 1.7.3
@@ -4398,6 +4401,19 @@ packages:
     dependencies:
       defer-to-connect: 2.0.1
     dev: true
+
+  /@tanstack/query-core@5.90.3:
+    resolution: {integrity: sha512-HtPOnCwmx4dd35PfXU8jjkhwYrsHfuqgC8RCJIwWglmhIUIlzPP0ZcEkDAc+UtAWCiLm7T8rxeEfHZlz3hYMCA==}
+    dev: false
+
+  /@tanstack/react-query@5.90.3(react@18.3.1):
+    resolution: {integrity: sha512-i/LRL6DtuhG6bjGzavIMIVuKKPWx2AnEBIsBfuMm3YoHne0a20nWmsatOCBcVSaT0/8/5YFjNkebHAPLVUSi0Q==}
+    peerDependencies:
+      react: ^18 || ^19
+    dependencies:
+      '@tanstack/query-core': 5.90.3
+      react: 18.3.1
+    dev: false
 
   /@testcontainers/postgresql@10.11.0:
     resolution: {integrity: sha512-TJC6kyb2lmkSF2XWvsjDVn61YRin8e1mE2IiLRkeR3mKWHm/LDwyRX14RTnRuNK7auSCCr35Ft/fKv/R6O5Taw==}

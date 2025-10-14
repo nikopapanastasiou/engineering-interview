@@ -18,11 +18,12 @@ export const Card = styled.div`
 export const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 10px 16px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
   font-size: 14px;
+  font-family: inherit;
 
   ${({ variant = 'primary' }) => {
     if (variant === 'primary') {
@@ -59,6 +60,7 @@ export const Input = styled.input`
   transition: border-color 0.2s, box-shadow 0.2s;
   background: ${COLORS.surface};
   color: ${COLORS.textPrimary};
+  font-family: inherit;
 
   &:focus {
     outline: none;
@@ -74,7 +76,7 @@ export const Input = styled.input`
 export const Label = styled.label`
   display: block;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: ${COLORS.gray700};
   margin-bottom: 6px;
 `;
@@ -101,13 +103,15 @@ export const Grid = styled.div<{ cols?: number; gap?: number }>`
 
 export const Heading = styled.h2`
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
   color: ${COLORS.textPrimary};
   margin: 0 0 16px 0;
+  font-family: inherit;
 `;
 
 export const Text = styled.p`
   color: ${COLORS.textSecondary};
   font-size: 14px;
   margin: 0;
+  font-family: inherit;
 `;

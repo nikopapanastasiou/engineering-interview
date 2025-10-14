@@ -32,19 +32,21 @@ export const CloseButton = styled.button`
   position: absolute;
   top: 16px;
   right: 16px;
-  background: ${COLORS.gray100};
+  background: none;
   border: none;
-  border-radius: 50%;
+  cursor: pointer;
+  color: ${COLORS.gray500};
   width: 32px;
   height: 32px;
-  cursor: pointer;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  border-radius: 4px;
+  transition: all 0.2s;
+  
   &:hover {
-    background: ${COLORS.gray200};
+    background: ${COLORS.gray100};
+    color: ${COLORS.gray700};
   }
 `;
 

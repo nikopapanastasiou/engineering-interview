@@ -1,11 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Grid, Card, Text, Input, Container, Heading, ErrorText } from '../components/ui';
 import { useTeams } from '../state/teams';
-import { api } from '../api/client';
 import { PokemonDetail } from '../components/PokemonDetail';
 import { PokemonImage, PokemonName, PokemonId, TypeBadge } from '../components/shared';
-import { Pokemon, PaginatedResponse } from '../types/pokemon';
+import { Pokemon } from '../types/pokemon';
+import { usePokemon } from '../hooks/usePokemon';
 import styled from '@emotion/styled';
 
 const PokemonCard = styled(Card)`
@@ -25,15 +25,21 @@ const PokemonCard = styled(Card)`
 
 export function SearchPage() {
   const { addMember, currentTeamId, teams } = useTeams();
-  const [all, setAll] = useState<Pokemon[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-  const [initialLoad, setInitialLoad] = useState(true);
+  
+  // Use React Query for Pokemon data - this prevents duplicates automatically
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = usePokemon({ 
+    limit: 50,
+    search: q.trim() || undefined // Only pass search if there's actually a query
+  });
   
   // Intersection observer for infinite scroll
   const { ref: loadMoreRef, inView } = useInView({
@@ -41,39 +47,22 @@ export function SearchPage() {
     rootMargin: '100px',
   });
 
-  // Load Pokemon data
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    setError(null);
-    api<PaginatedResponse<Pokemon>>(`/pokemon?page=${page}&limit=50`)
-      .then((response) => {
-        if (mounted) {
-          setAll((prev) => page === 1 ? response.data : [...prev, ...response.data]);
-          setHasMore(response.meta.hasNextPage);
-          setTotal(response.meta.total);
-          setInitialLoad(false);
-        }
-      })
-      .catch((err) => setError(err?.message || 'Failed to load pokemon'))
-      .finally(() => setLoading(false));
-    return () => {
-      mounted = false;
-    };
-  }, [page]);
-  
-  // Trigger load more when scroll sentinel is in view (but not on initial load)
-  useEffect(() => {
-    if (!initialLoad && inView && hasMore && !loading) {
-      setPage((p) => p + 1);
+  // Trigger load more when scroll sentinel is in view
+  React.useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [inView, hasMore, loading, initialLoad]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Client-side filtering for real-time search
   const filtered = useMemo(() => {
+    if (!data?.pokemon) return [];
+    
     const s = q.trim().toLowerCase();
-    if (!s) return all;
-    return all.filter((p) => p.name.includes(s) || String(p.id) === s);
-  }, [q, all]);
+    if (!s) return data.pokemon;
+    
+    return data.pokemon.filter((p) => p.name.toLowerCase().includes(s) || String(p.id) === s);
+  }, [q, data?.pokemon]);
 
   function addToTeam(p: Pokemon) {
     if (!currentTeamId) return alert('Create/select a team first on Teams page');
@@ -90,16 +79,28 @@ export function SearchPage() {
   return (
     <Container>
       <Heading>Search Pokémon</Heading>
-      {currentTeam && <Text style={{ marginBottom: 12 }}>Adding to: <strong>{currentTeam.name}</strong> ({currentTeam.members.length}/6)</Text>}
+      {currentTeam && (
+        <Text style={{ marginBottom: 12 }}>
+          Adding to: <strong>{currentTeam.name}</strong> ({currentTeam.members.length}/6)
+        </Text>
+      )}
       <Input
         placeholder="Search by name or id"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         style={{ maxWidth: 400, marginBottom: 16 }}
       />
-      {total > 0 && <Text style={{ marginBottom: 12 }}>Showing {all.length} of {total} Pokémon</Text>}
-      {loading && page === 1 && <Text>Loading…</Text>}
-      {error && <ErrorText>{error}</ErrorText>}
+      
+      {/* Status indicators */}
+      {data?.total && (
+        <Text style={{ marginBottom: 12 }}>
+          Showing {filtered.length} of {data.total} Pokémon
+        </Text>
+      )}
+      {isLoading && <Text>Loading…</Text>}
+      {error && <ErrorText>{error instanceof Error ? error.message : 'Failed to load pokemon'}</ErrorText>}
+      
+      {/* Pokemon Grid */}
       <Grid cols={180}>
         {filtered.map((p) => {
           const spriteUrl = p.sprites?.front_default || p.sprites?.other?.['official-artwork']?.front_default || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
@@ -120,25 +121,29 @@ export function SearchPage() {
         })}
       </Grid>
       
-      {/* Infinite scroll sentinel - only show after initial load */}
-      {!initialLoad && hasMore && all.length > 0 && (
+      {/* Infinite scroll sentinel */}
+      {hasNextPage && (
         <div ref={loadMoreRef} style={{ height: 20, margin: '24px 0' }}>
-          {loading && (
+          {isFetchingNextPage && (
             <Text style={{ textAlign: 'center' }}>Loading more Pokémon...</Text>
           )}
         </div>
       )}
       
-      {!hasMore && all.length > 0 && (
+      {/* End message */}
+      {!hasNextPage && filtered.length > 0 && (
         <Text style={{ textAlign: 'center', marginTop: 24, color: '#9ca3af' }}>
-          You've reached the end! All {total} Pokémon loaded.
+          You've reached the end! All {data?.total || filtered.length} Pokémon loaded.
         </Text>
       )}
+      
+      {/* Pokemon Detail Modal */}
       {selectedPokemon && (
         <PokemonDetail
           pokemon={selectedPokemon}
           teamsContaining={getTeamsContaining(selectedPokemon.id)}
           onClose={() => setSelectedPokemon(null)}
+          onAddToTeam={() => addToTeam(selectedPokemon)}
         />
       )}
     </Container>

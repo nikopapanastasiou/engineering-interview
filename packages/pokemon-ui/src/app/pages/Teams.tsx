@@ -1,12 +1,30 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import styled from '@emotion/styled';
+
+// State and API
 import { useTeams } from '../state/teams';
-import { Button, Card, Container, ErrorText, Grid, Heading, Input, Text } from '../components/ui';
-import { PokemonDetail } from '../components/PokemonDetail';
 import { api } from '../api/client';
 import { Pokemon } from '../types/pokemon';
-import styled, { css } from '@emotion/styled';
 
-const teamCardCss = css`
+// UI Components
+import { Button, Card, Container, ErrorText, Grid, Heading, Input, Text } from '../components/ui';
+import { PokemonDetail } from '../components/PokemonDetail';
+import { 
+  PokemonId, 
+  Modal, 
+  TypeBadge, 
+  RemoveButton, 
+  Overlay, 
+  COLORS 
+} from '../components/shared';
+import { CloseIcon, WarningIcon, TrashIcon } from '../components/icons';
+
+// ========================================
+// STYLED COMPONENTS
+// ========================================
+
+// Team Card
+const TeamCard = styled(Card)<{ hasWarning?: boolean }>`
   cursor: pointer;
   transition: all 0.2s;
   border: 2px solid ${({ hasWarning }) => (hasWarning ? COLORS.warning : COLORS.gray200)};
@@ -33,7 +51,11 @@ const TeamName = styled.h3`
 const TeamCount = styled.span<{ isFull?: boolean; isEmpty?: boolean }>`
   font-size: 14px;
   font-weight: 600;
-  color: ${({ isFull, isEmpty }) => (isFull ? COLORS.success : isEmpty ? COLORS.error : COLORS.textSecondary)};
+  color: ${({ isFull, isEmpty }) => 
+    isFull ? COLORS.success : 
+    isEmpty ? COLORS.error : 
+    COLORS.textSecondary
+  };
 `;
 
 const WarningBadge = styled.div`
@@ -50,6 +72,7 @@ const WarningBadge = styled.div`
   margin-top: 8px;
 `;
 
+// Member Components
 const MemberCard = styled.div`
   display: flex;
   flex-direction: column;
@@ -69,7 +92,6 @@ const MemberCard = styled.div`
   }
 `;
 
-
 const MemberImage = styled.img`
   width: 64px;
   height: 64px;
@@ -84,10 +106,21 @@ const MemberName = styled.div`
   text-align: center;
 `;
 
-const MemberId = styled(PokemonId)`
-  font-size: 10px;
+const EmptySlot = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: ${COLORS.gray50};
+  border: 2px dashed ${COLORS.gray300};
+  border-radius: 6px;
+  color: ${COLORS.gray400};
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 100px;
 `;
 
+// Modal Components
 const WideModal = styled(Modal)`
   max-width: 900px;
 `;
@@ -167,11 +200,11 @@ const LineupRemoveButton = styled.button`
   }
 `;
 
+// Search Components
 const SearchSection = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 
 const SearchPokemonCard = styled.div<{ disabled?: boolean }>`
   display: flex;
@@ -188,9 +221,15 @@ const SearchPokemonCard = styled.div<{ disabled?: boolean }>`
   transition: all 0.2s;
   min-height: 160px;
   position: relative;
+  
   &:hover {
-    ${({ disabled }) => !disabled && `transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-color: ${COLORS.secondary};`}
+    ${({ disabled }) => !disabled && `
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: ${COLORS.secondary};
+    `}
   }
+  
   &:hover button {
     opacity: 0.9;
   }
@@ -213,6 +252,7 @@ const SearchRemoveButton = styled.button`
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s;
+  
   &:hover {
     opacity: 1 !important;
   }
@@ -236,24 +276,43 @@ const SmallTypeBadge = styled(TypeBadge)`
   font-size: 9px;
 `;
 
-const EmptySlot = styled.div`
+// Icon Button Components
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: ${COLORS.gray50};
-  border: 2px dashed ${COLORS.gray300};
-  border-radius: 6px;
-  color: ${COLORS.gray400};
-  font-size: 12px;
-  font-weight: 500;
-  min-height: 100px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${COLORS.gray100};
+  }
 `;
 
+const CloseButton = styled(IconButton)`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  color: ${COLORS.gray500};
+  
+  &:hover {
+    color: ${COLORS.gray700};
+  }
+`;
+
+// ========================================
+// MAIN COMPONENT
+// ========================================
+
 export function TeamsPage() {
+  // State
   const { teams, createTeam, deleteTeam, addMember, removeMember } = useTeams();
   const [newName, setNewName] = useState('');
-  const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addingToTeamId, setAddingToTeamId] = useState<string | null>(null);
@@ -262,10 +321,10 @@ export function TeamsPage() {
   const [loadingPokemon, setLoadingPokemon] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch Pokemon for modal
   useEffect(() => {
     if (showAddModal && allPokemon.length === 0) {
       setLoadingPokemon(true);
-      // Fetch all pokemon with a large limit for the modal
       api<{ data: Pokemon[]; meta: any }>('/pokemon?limit=1000')
         .then((response) => setAllPokemon(response.data))
         .catch((err) => setError(err?.message || 'Failed to load pokemon'))
@@ -273,14 +332,15 @@ export function TeamsPage() {
     }
   }, [showAddModal, allPokemon.length]);
 
-  function onCreate(e: FormEvent) {
+  // Event Handlers
+  const handleCreateTeam = (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
     createTeam(newName.trim());
     setNewName('');
-  }
+  };
 
-  function openAddModal(teamId: string) {
+  const openAddModal = (teamId: string) => {
     const team = teams.find((t) => t.id === teamId);
     if (!team) return;
     if (team.members.length >= 6) {
@@ -290,10 +350,11 @@ export function TeamsPage() {
     setAddingToTeamId(teamId);
     setShowAddModal(true);
     setSearchQuery('');
-  }
+  };
 
-  function handleAddPokemon(pokemon: Pokemon) {
+  const handleAddPokemon = (pokemon: Pokemon) => {
     if (!addingToTeamId) return;
+    
     const team = teams.find((t) => t.id === addingToTeamId);
     if (!team) return;
     
@@ -308,21 +369,22 @@ export function TeamsPage() {
     }
     
     addMember(addingToTeamId, { id: pokemon.id, name: pokemon.name });
-  }
+  };
 
-  async function handleMemberClick(memberId: number) {
+  const handleMemberClick = async (memberId: number) => {
     try {
       const pokemon = await api<Pokemon>(`/pokemon/${memberId}`);
       setSelectedPokemon(pokemon);
     } catch (err) {
       console.error('Failed to load pokemon details', err);
     }
-  }
+  };
 
-  function getTeamsContaining(pokemonId: number): string[] {
+  const getTeamsContaining = (pokemonId: number): string[] => {
     return teams.filter((t) => t.members.some((m) => m.id === pokemonId)).map((t) => t.name);
-  }
+  };
 
+  // Computed Values
   const filteredPokemon = useMemo(() => {
     const s = searchQuery.trim().toLowerCase();
     if (!s) return allPokemon;
@@ -331,16 +393,24 @@ export function TeamsPage() {
 
   const addingToTeam = teams.find((t) => t.id === addingToTeamId);
 
+  // Render
   return (
     <Container>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Heading>Your Teams</Heading>
-        <form onSubmit={onCreate} style={{ display: 'flex', gap: 8 }}>
-          <Input placeholder="New team name" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ minWidth: 200 }} />
+        <form onSubmit={handleCreateTeam} style={{ display: 'flex', gap: 8 }}>
+          <Input 
+            placeholder="New team name" 
+            value={newName} 
+            onChange={(e) => setNewName(e.target.value)} 
+            style={{ minWidth: 200 }} 
+          />
           <Button type="submit">Create Team</Button>
         </form>
       </div>
 
+      {/* Teams List */}
       {teams.length === 0 ? (
         <Card>
           <Text>No teams yet. Create your first team above!</Text>
@@ -349,9 +419,10 @@ export function TeamsPage() {
         <Grid cols={300}>
           {teams.map((team) => {
             const isFull = team.members.length === 6;
-            const hasWarning = team.members.length < 6;
+            const hasWarning = team.members.length < 6 && team.members.length > 0;
+            
             return (
-              <TeamCard key={team.id} hasWarning={hasWarning && team.members.length > 0}>
+              <TeamCard key={team.id} hasWarning={hasWarning}>
                 <TeamHeader>
                   <TeamName>{team.name}</TeamName>
                   <TeamCount isFull={isFull} isEmpty={team.members.length === 0}>
@@ -359,41 +430,55 @@ export function TeamsPage() {
                   </TeamCount>
                 </TeamHeader>
 
+                {/* Team Members Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
-                  {team.members.map((m) => {
-                    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.id}.png`;
+                  {team.members.map((member) => {
+                    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${member.id}.png`;
                     return (
-                      <MemberCard key={m.id} onClick={() => handleMemberClick(m.id)}>
+                      <MemberCard key={member.id} onClick={() => handleMemberClick(member.id)}>
                         <RemoveButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeMember(team.id, m.id);
+                            removeMember(team.id, member.id);
                           }}
                         >
-                          ×
+                          <CloseIcon size={12} />
                         </RemoveButton>
-                        <MemberImage src={spriteUrl} alt={m.name} loading="lazy" />
-                        <MemberId>#{m.id}</MemberId>
-                        <MemberName>{m.name}</MemberName>
+                        <MemberImage src={spriteUrl} alt={member.name} loading="lazy" />
+                        <PokemonId>#{member.id}</PokemonId>
+                        <MemberName>{member.name}</MemberName>
                       </MemberCard>
                     );
                   })}
+                  
+                  {/* Empty Slots */}
                   {Array.from({ length: 6 - team.members.length }).map((_, i) => (
                     <EmptySlot key={`empty-${i}`}>Empty</EmptySlot>
                   ))}
                 </div>
 
-                {hasWarning && team.members.length > 0 && (
+                {/* Warning Badge */}
+                {hasWarning && (
                   <WarningBadge>
-                    ⚠️ Team has less than 6 Pokémon
+                    <WarningIcon size={14} />
+                    Team has less than 6 Pokémon
                   </WarningBadge>
                 )}
 
+                {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <Button onClick={() => openAddModal(team.id)} disabled={isFull} style={{ flex: 1, fontSize: 13 }}>
+                  <Button 
+                    onClick={() => openAddModal(team.id)} 
+                    disabled={isFull} 
+                    style={{ flex: 1, fontSize: 13 }}
+                  >
                     {isFull ? 'Team Full' : 'Add Pokémon'}
                   </Button>
-                  <Button onClick={() => deleteTeam(team.id)} variant="danger" style={{ fontSize: 13 }}>
+                  <Button 
+                    onClick={() => deleteTeam(team.id)} 
+                    variant="danger" 
+                    style={{ fontSize: 13 }}
+                  >
                     Delete
                   </Button>
                 </div>
@@ -403,33 +488,41 @@ export function TeamsPage() {
         </Grid>
       )}
 
+      {/* Add Pokemon Modal */}
       {showAddModal && addingToTeam && (
         <Overlay onClick={() => setShowAddModal(false)}>
           <WideModal onClick={(e) => e.stopPropagation()}>
-            <CloseButton onClick={() => setShowAddModal(false)}>×</CloseButton>
+            <CloseButton onClick={() => setShowAddModal(false)}>
+              <CloseIcon size={18} />
+            </CloseButton>
             <Heading style={{ marginBottom: 8 }}>Add Pokémon to {addingToTeam.name}</Heading>
-            <Text style={{ marginBottom: 0, color: '#6b7280' }}>Team: {addingToTeam.members.length}/6 Pokémon</Text>
+            <Text style={{ marginBottom: 0, color: COLORS.textSecondary }}>
+              Team: {addingToTeam.members.length}/6 Pokémon
+            </Text>
             
             <ModalContent>
+              {/* Current Lineup Section */}
               <LineupSection>
                 <LineupTitle>Current Lineup ({addingToTeam.members.length}/6)</LineupTitle>
                 {addingToTeam.members.length === 0 ? (
-                  <Text style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No Pokémon yet</Text>
+                  <Text style={{ fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', padding: '20px 0' }}>
+                    No Pokémon yet
+                  </Text>
                 ) : (
-                  addingToTeam.members.map((m) => {
-                    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.id}.png`;
+                  addingToTeam.members.map((member) => {
+                    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${member.id}.png`;
                     return (
-                      <LineupCard key={m.id}>
+                      <LineupCard key={member.id}>
                         <LineupRemoveButton
-                          onClick={() => removeMember(addingToTeam.id, m.id)}
+                          onClick={() => removeMember(addingToTeam.id, member.id)}
                           title="Remove from team"
                         >
-                          ×
+                          <CloseIcon size={10} />
                         </LineupRemoveButton>
-                        <LineupImage src={spriteUrl} alt={m.name} loading="lazy" />
+                        <LineupImage src={spriteUrl} alt={member.name} loading="lazy" />
                         <LineupInfo>
-                          <LineupName>{m.name}</LineupName>
-                          <LineupId>#{m.id}</LineupId>
+                          <LineupName>{member.name}</LineupName>
+                          <LineupId>#{member.id}</LineupId>
                         </LineupInfo>
                       </LineupCard>
                     );
@@ -437,6 +530,7 @@ export function TeamsPage() {
                 )}
               </LineupSection>
 
+              {/* Pokemon Search Section */}
               <SearchSection>
                 <Input
                   placeholder="Search by name or id"
@@ -450,33 +544,35 @@ export function TeamsPage() {
 
                 <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
                   <Grid cols={130}>
-                    {filteredPokemon.map((p) => {
-                      const isOnTeam = addingToTeam.members.some((m) => m.id === p.id);
-                      const spriteUrl = p.sprites?.front_default || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
+                    {filteredPokemon.map((pokemon) => {
+                      const isOnTeam = addingToTeam.members.some((m) => m.id === pokemon.id);
+                      const spriteUrl = pokemon.sprites?.front_default || 
+                        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+                      
                       return (
                         <SearchPokemonCard
-                          key={p.id}
+                          key={pokemon.id}
                           disabled={isOnTeam}
-                          onClick={() => !isOnTeam && handleAddPokemon(p)}
+                          onClick={() => !isOnTeam && handleAddPokemon(pokemon)}
                         >
                           {isOnTeam && (
                             <SearchRemoveButton
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeMember(addingToTeam.id, p.id);
+                                removeMember(addingToTeam.id, pokemon.id);
                               }}
                               title="Remove from team"
                             >
-                              ×
+                              <CloseIcon size={12} />
                             </SearchRemoveButton>
                           )}
-                          <SearchPokemonImage src={spriteUrl} alt={p.name} loading="lazy" />
-                          <MemberId>#{p.id}</MemberId>
-                          <SearchPokemonName>{p.name}</SearchPokemonName>
+                          <SearchPokemonImage src={spriteUrl} alt={pokemon.name} loading="lazy" />
+                          <PokemonId>#{pokemon.id}</PokemonId>
+                          <SearchPokemonName>{pokemon.name}</SearchPokemonName>
                           <div>
-                            {p.types?.slice(0, 2).map((t) => (
-                              <SmallTypeBadge key={t} type={t}>
-                                {t}
+                            {pokemon.types?.slice(0, 2).map((type) => (
+                              <SmallTypeBadge key={type} type={type}>
+                                {type}
                               </SmallTypeBadge>
                             ))}
                           </div>
@@ -491,6 +587,7 @@ export function TeamsPage() {
         </Overlay>
       )}
 
+      {/* Pokemon Detail Modal */}
       {selectedPokemon && (
         <PokemonDetail
           pokemon={selectedPokemon}
