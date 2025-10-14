@@ -1,14 +1,9 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
 
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-
-import { startDatabase } from './modules/database/db';
 import { AppModule } from './modules/app/app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   process.on('uncaughtException', (error) => {
@@ -16,10 +11,19 @@ async function bootstrap() {
     process.exit();
   });
 
-  await startDatabase();
   const app = await NestFactory.create(AppModule);
   
-  // Enable CORS for frontend
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
+  
+  app.useGlobalFilters(new AllExceptionsFilter());
+  
   app.enableCors({
     origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
     credentials: true,
@@ -29,8 +33,6 @@ async function bootstrap() {
   
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  
-  // Setup Swagger/OpenAPI documentation
   const config = new DocumentBuilder()
     .setTitle('PokéTeams API')
     .setDescription('API for managing Pokémon teams and user profiles')

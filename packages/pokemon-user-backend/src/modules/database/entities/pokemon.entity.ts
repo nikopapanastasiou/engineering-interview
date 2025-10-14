@@ -17,8 +17,6 @@ export const pokemonTable = pgTable('pokemon', {
     .default(sql`'{}'::text[]`),
   stats: jsonb('stats'),
   sprites: jsonb('sprites'),
-  
-  // Enhanced fields from species data
   description: text('description'),
   genus: text('genus'),
   generation: text('generation'),

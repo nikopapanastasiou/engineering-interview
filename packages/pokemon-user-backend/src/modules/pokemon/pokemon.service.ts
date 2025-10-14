@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, count, asc } from 'drizzle-orm';
+import { eq, count, asc } from 'drizzle-orm';
 import { DRIZZLE_CLIENT, DrizzleDatabase } from '../database/db.tokens';
-import { pokemonTable, type NewPokemon, type Pokemon } from '../database/entities/pokemon.entity';
+import { pokemonTable, type Pokemon } from '../database/entities/pokemon.entity';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 @Injectable()
@@ -28,26 +28,4 @@ export class PokemonService {
     return poke;
   }
 
-  async create(payload: NewPokemon): Promise<Pokemon> {
-    const [created] = await this.db.insert(pokemonTable).values(payload).returning();
-    return created;
-  }
-
-  async update(id: number, payload: Partial<NewPokemon>): Promise<Pokemon> {
-    const [updated] = await this.db
-      .update(pokemonTable)
-      .set(payload)
-      .where(eq(pokemonTable.id, id))
-      .returning();
-    if (!updated) throw new NotFoundException(`Pokemon ${id} not found`);
-    return updated;
-  }
-
-  async remove(id: number): Promise<void> {
-    const deleted = await this.db
-      .delete(pokemonTable)
-      .where(eq(pokemonTable.id, id))
-      .returning({ id: pokemonTable.id });
-    if (deleted.length === 0) throw new NotFoundException(`Pokemon ${id} not found`);
-  }
 }

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { TeamsService } from './teams.service';
 import { AddPokemonDto, CreateTeamDto, UpdateTeamDto } from './team.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthenticatedRequest } from '../../common/types/auth.types';
 
 @ApiTags('teams')
 @ApiBearerAuth('JWT-auth')
@@ -14,8 +15,8 @@ export class TeamsController {
   @Get()
   @ApiOperation({ summary: 'Get all teams for current user' })
   @ApiResponse({ status: 200, description: 'Returns user teams' })
-  findAll(@Request() req: any) {
-    const userId = req.user?.userId;
+  findAll(@Request() req: AuthenticatedRequest) {
+    const userId = req.user.userId;
     return this.service.findAllByUser(userId);
   }
 
@@ -36,15 +37,15 @@ export class TeamsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new team' })
-  @ApiResponse({ status: 201, description: 'Team created successfully' })
-  create(@Request() req: any, @Body() dto: CreateTeamDto) {
-    const userId = req.user?.userId;
+  @ApiResponse({ status: 201, description: 'Team created' })
+  create(@Request() req: AuthenticatedRequest, @Body() dto: CreateTeamDto) {
+    const userId = req.user.userId;
     return this.service.create({ ...dto, userId });
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update team name' })
-  @ApiResponse({ status: 200, description: 'Team updated successfully' })
+  @ApiResponse({ status: 200, description: 'Team updated' })
   @ApiResponse({ status: 404, description: 'Team not found' })
   update(@Param('id') id: string, @Body() dto: UpdateTeamDto) {
     return this.service.update(id, dto);
@@ -52,7 +53,7 @@ export class TeamsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a team' })
-  @ApiResponse({ status: 200, description: 'Team deleted successfully' })
+  @ApiResponse({ status: 200, description: 'Team deleted' })
   @ApiResponse({ status: 404, description: 'Team not found' })
   remove(@Param('id') id: string) {
     return this.service.remove(id);

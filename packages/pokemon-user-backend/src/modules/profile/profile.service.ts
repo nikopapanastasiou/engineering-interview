@@ -79,10 +79,6 @@ export class ProfileService {
     }
   }
 
-  /**
-   * Compatibility helper used by the legacy auth flow.
-   * Returns the first profile found, or null if none exist.
-   */
   async getProfile(): Promise<Profile | null> {
     const profiles = await this.findAll();
     return profiles[0] ?? null;
