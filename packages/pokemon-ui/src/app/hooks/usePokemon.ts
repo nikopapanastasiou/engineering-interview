@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { PokemonService } from '../services/PokemonService';
 import { Pokemon, PaginatedResponse } from '../types/pokemon';
 
 export interface UsePokemonOptions {
@@ -15,16 +15,7 @@ interface PokemonPageParam {
 
 // Fetch function for a single page
 const fetchPokemonPage = async ({ page, limit, search }: PokemonPageParam): Promise<PaginatedResponse<Pokemon>> => {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-  
-  if (search?.trim()) {
-    params.set('search', search.trim());
-  }
-  
-  return api<PaginatedResponse<Pokemon>>(`/pokemon?${params}`);
+  return PokemonService.fetchPokemon({ page, limit, search });
 };
 
 export function usePokemon({ limit = 50, search }: UsePokemonOptions = {}) {
@@ -65,7 +56,7 @@ export function usePokemon({ limit = 50, search }: UsePokemonOptions = {}) {
 export function usePokemonById(id: number) {
   return useQuery({
     queryKey: ['pokemon', 'single', id],
-    queryFn: () => api<Pokemon>(`/pokemon/${id}`),
+    queryFn: () => PokemonService.fetchPokemonById(id),
     enabled: !!id,
   });
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api } from '../api/client';
+import { TeamsService } from '../services/TeamsService';
 
 export type TeamPokemon = { id: number; name: string };
 
@@ -26,22 +26,6 @@ const STORAGE_KEY = 'pokemon_teams_state_v1';
 
 type Persisted = { teams: Team[]; currentTeamId: string | null };
 
-type BackendTeam = {
-  id: string;
-  name: string;
-  profileId: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type BackendTeamMember = {
-  teamId: string;
-  pokemonId: number;
-  pokemon: {
-    id: number;
-    name: string;
-  };
-};
 
 export function TeamProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -53,26 +37,10 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     async function loadTeams() {
       try {
-        const backendTeams = await api<BackendTeam[]>('/teams');
+        const teams = await TeamsService.fetchTeams();
         if (!mounted) return;
         
-        // Fetch roster for each team
-        const teamsWithMembers = await Promise.all(
-          backendTeams.map(async (bt) => {
-            try {
-              const roster = await api<BackendTeamMember[]>(`/teams/${bt.id}/roster`);
-              const members: TeamPokemon[] = roster.map((r) => ({
-                id: r.pokemonId,
-                name: r.pokemon?.name || '',
-              }));
-              return { id: bt.id, name: bt.name, members };
-            } catch {
-              return { id: bt.id, name: bt.name, members: [] };
-            }
-          })
-        );
-        
-        setTeams(teamsWithMembers);
+        setTeams(teams);
         
         // Restore currentTeamId from localStorage
         try {
@@ -108,21 +76,21 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
   }, [currentTeamId]);
 
   const createTeam = useCallback((name: string) => {
-    const team: Team = { id: crypto.randomUUID(), name, members: [] };
+    const tempId = crypto.randomUUID();
+    const team: Team = { id: tempId, name, members: [] };
     setTeams((t) => [...t, team]);
     setCurrentTeamId(team.id);
     
     // Sync to backend
-    api<BackendTeam>('/teams', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }).then((created) => {
-      // Update with backend ID if different
-      if (created.id !== team.id) {
-        setTeams((ts) => ts.map((t) => (t.id === team.id ? { ...t, id: created.id } : t)));
-        setCurrentTeamId(created.id);
-      }
-    }).catch((err) => console.error('Failed to create team on backend:', err));
+    TeamsService.createTeam({ name })
+      .then((created) => {
+        // Update with backend ID if different
+        if (created.id !== tempId) {
+          setTeams((ts) => ts.map((t) => (t.id === tempId ? { ...t, id: created.id } : t)));
+          setCurrentTeamId(created.id);
+        }
+      })
+      .catch((err) => console.error('Failed to create team on backend:', err));
     
     return team;
   }, []);
@@ -131,10 +99,8 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     setTeams((ts) => ts.map((t) => (t.id === id ? { ...t, name } : t)));
     
     // Sync to backend
-    api(`/teams/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name }),
-    }).catch((err) => console.error('Failed to rename team on backend:', err));
+    TeamsService.updateTeam(id, { name })
+      .catch((err) => console.error('Failed to rename team on backend:', err));
   }, []);
 
   const deleteTeam = useCallback((id: string) => {
@@ -142,9 +108,8 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     setCurrentTeamId((cid) => (cid === id ? null : cid));
     
     // Sync to backend
-    api(`/teams/${id}`, {
-      method: 'DELETE',
-    }).catch((err) => console.error('Failed to delete team on backend:', err));
+    TeamsService.deleteTeam(id)
+      .catch((err) => console.error('Failed to delete team on backend:', err));
   }, []);
 
   const addMember = useCallback((teamId: string, mon: TeamPokemon) => {
@@ -159,19 +124,16 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     );
     
     // Sync to backend
-    api(`/teams/${teamId}/pokemon`, {
-      method: 'POST',
-      body: JSON.stringify({ pokemonId: mon.id }),
-    }).catch((err) => console.error('Failed to add pokemon to team on backend:', err));
+    TeamsService.addPokemonToTeam(teamId, { pokemonId: mon.id })
+      .catch((err) => console.error('Failed to add pokemon to team on backend:', err));
   }, []);
 
   const removeMember = useCallback((teamId: string, id: number) => {
     setTeams((ts) => ts.map((t) => (t.id === teamId ? { ...t, members: t.members.filter((m) => m.id !== id) } : t)));
     
     // Sync to backend
-    api(`/teams/${teamId}/pokemon/${id}`, {
-      method: 'DELETE',
-    }).catch((err) => console.error('Failed to remove pokemon from team on backend:', err));
+    TeamsService.removePokemonFromTeam(teamId, id)
+      .catch((err) => console.error('Failed to remove pokemon from team on backend:', err));
   }, []);
 
   const contextValue: TeamsContextType = {

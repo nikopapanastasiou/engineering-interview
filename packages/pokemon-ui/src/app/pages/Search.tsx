@@ -64,12 +64,6 @@ export function SearchPage() {
     return data.pokemon.filter((p) => p.name.toLowerCase().includes(s) || String(p.id) === s);
   }, [q, data?.pokemon]);
 
-  function addToTeam(p: Pokemon) {
-    if (!currentTeamId) return alert('Create/select a team first on Teams page');
-    addMember(currentTeamId, { id: p.id, name: p.name });
-    setSelectedPokemon(null);
-  }
-
   function getTeamsContaining(pokemonId: number): string[] {
     return teams.filter((t) => t.members.some((m) => m.id === pokemonId)).map((t) => t.name);
   }
@@ -143,7 +137,6 @@ export function SearchPage() {
           pokemon={selectedPokemon}
           teamsContaining={getTeamsContaining(selectedPokemon.id)}
           onClose={() => setSelectedPokemon(null)}
-          onAddToTeam={() => addToTeam(selectedPokemon)}
         />
       )}
     </Container>

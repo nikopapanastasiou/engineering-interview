@@ -2,6 +2,9 @@ import styled from '@emotion/styled';
 import { Card } from './ui';
 import { COLORS, TYPE_COLORS } from './colors';
 
+// Re-export Card for convenience
+export { Card };
+
 // Re-export colors for convenience
 export { COLORS, TYPE_COLORS };
 
@@ -28,27 +31,6 @@ export const Modal = styled(Card)`
   position: relative;
 `;
 
-export const CloseButton = styled.button`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${COLORS.gray500};
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-  
-  &:hover {
-    background: ${COLORS.gray100};
-    color: ${COLORS.gray700};
-  }
-`;
 
 // Pokemon Display Components
 export const PokemonImage = styled.img`
@@ -103,14 +85,3 @@ export const RemoveButton = styled.button`
   }
 `;
 
-// Section Components
-export const Section = styled.div`
-  margin-bottom: 20px;
-`;
-
-export const SectionTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${COLORS.gray700};
-  margin: 0 0 8px 0;
-`;

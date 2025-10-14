@@ -148,10 +148,9 @@ type Props = {
   pokemon: Pokemon;
   teamsContaining?: string[];
   onClose: () => void;
-  onAddToTeam?: () => void;
 };
 
-export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToTeam }: Props) {
+export function PokemonDetail({ pokemon, teamsContaining = [], onClose }: Props) {
   const spriteUrl =
     pokemon.sprites?.other?.['official-artwork']?.front_default ||
     pokemon.sprites?.front_default ||
@@ -272,13 +271,6 @@ export function PokemonDetail({ pokemon, teamsContaining = [], onClose, onAddToT
               ))}
             </TypeBadges>
           </InfoSection>
-        )}
-
-        {/* Add to Team Button */}
-        {onAddToTeam && (
-          <div style={{ marginTop: 24, textAlign: 'center' }}>
-            <Button onClick={onAddToTeam}>Add to Team</Button>
-          </div>
         )}
       </Modal>
     </Overlay>

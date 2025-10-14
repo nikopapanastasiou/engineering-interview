@@ -3,6 +3,7 @@ import { LoginPage } from './pages/Login';
 import { SignupPage } from './pages/Signup';
 import { SearchPage } from './pages/Search';
 import { TeamsPage } from './pages/Teams';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import styled from '@emotion/styled';
 import { useAuth } from './state/auth';
 import { COLORS } from './components/colors';
@@ -92,10 +93,26 @@ export function App() {
       <Nav />
       <div style={{ padding: 16, background: COLORS.background, minHeight: 'calc(100vh - 57px)' }}>
         <Routes>
-          <Route path="/" element={user ? <SearchPage /> : <Navigate to="/login" replace />} />
-          <Route path="/teams" element={user ? <TeamsPage /> : <Navigate to="/login" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/" element={user ? (
+            <ErrorBoundary>
+              <SearchPage />
+            </ErrorBoundary>
+          ) : <Navigate to="/login" replace />} />
+          <Route path="/teams" element={user ? (
+            <ErrorBoundary>
+              <TeamsPage />
+            </ErrorBoundary>
+          ) : <Navigate to="/login" replace />} />
+          <Route path="/login" element={
+            <ErrorBoundary>
+              <LoginPage />
+            </ErrorBoundary>
+          } />
+          <Route path="/signup" element={
+            <ErrorBoundary>
+              <SignupPage />
+            </ErrorBoundary>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
