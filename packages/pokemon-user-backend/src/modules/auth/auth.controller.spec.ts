@@ -39,7 +39,14 @@ describe('AuthController', () => {
     };
 
     it('should create a new user and return access token', async () => {
-      const expectedResult = { access_token: 'mock.token' };
+      const expectedResult = { 
+        access_token: 'mock.token',
+        user: {
+          id: 'user-id',
+          email: signupDto.email,
+          displayName: signupDto.displayName,
+        }
+      };
       authService.signup.mockResolvedValue(expectedResult);
 
       const result = await controller.signup(signupDto);
@@ -67,7 +74,14 @@ describe('AuthController', () => {
     };
 
     it('should authenticate user and return access token', async () => {
-      const expectedResult = { access_token: 'mock.token' };
+      const expectedResult = { 
+        access_token: 'mock.token',
+        user: {
+          id: 'user-id',
+          email: loginDto.email,
+          displayName: 'Test User',
+        }
+      };
       authService.login.mockResolvedValue(expectedResult);
 
       const result = await controller.login(loginDto);

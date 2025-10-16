@@ -6,6 +6,7 @@ export default {
   globalTeardown: '<rootDir>/src/support/global-teardown.ts',
   setupFiles: ['<rootDir>/src/support/test-setup.ts'],
   testEnvironment: 'node',
+  testMatch: ['**/*.e2e-spec.ts'],
   transform: {
     '^.+\\.[tj]s$': [
       'ts-jest',
@@ -16,4 +17,5 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/pokemon-user-backend-e2e',
+  testTimeout: 30000, // E2E tests may take longer
 };

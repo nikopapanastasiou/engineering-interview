@@ -4,6 +4,7 @@
   "scripts": {
     "pokemon-ui:serve": "nx run pokemon-ui:serve",
     "pokemon-user-backend:serve": "nx run pokemon-user-backend:serve",
+    "pokemon-user-backend:build": "nx run pokemon-user-backend:build",
     "start": "concurrently --kill-others \"pnpm pokemon-ui:serve\" \"pnpm pokemon-user-backend:serve\"",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
@@ -14,9 +15,11 @@
     "db:push": "drizzle-kit push --config packages/pokemon-user-backend/drizzle.config.ts",
     "db:seed": "node packages/pokemon-user-backend/scripts/seed-pokemon.js",
     "db:studio": "drizzle-kit studio --config packages/pokemon-user-backend/drizzle.config.ts",
-    "test:unit": "nx test pokemon-user-backend --coverage",
-    "test:watch": "nx run pokemon-user-backend:test:watch",
-    "test:coverage": "nx run pokemon-user-backend:test:coverage"
+    "test:unit": "nx test pokemon-user-backend",
+    "test:unit:coverage": "nx test pokemon-user-backend --coverage",
+    "test:unit:watch": "nx test pokemon-user-backend --watch",
+    "test:e2e": "nx e2e pokemon-user-backend-e2e",
+    "test:all": "pnpm test:unit:coverage && pnpm test:e2e"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -75,6 +78,7 @@
     "@types/node": "18.16.9",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
+    "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "@vitejs/plugin-react": "^4.2.0",
@@ -98,6 +102,7 @@
     "nx": "19.5.7",
     "pm2": "^5.4.2",
     "prettier": "^2.6.2",
+    "supertest": "^7.1.4",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "typescript": "~5.5.2",

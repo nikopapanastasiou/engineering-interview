@@ -26,6 +26,13 @@ export class AuthService {
   private async issueToken(sub: string, email: string, displayName: string) {
     const payload = { sub, email, displayName };
     const access_token = await this.jwt.signAsync(payload);
-    return { access_token };
+    return { 
+      access_token,
+      user: {
+        id: sub,
+        email,
+        displayName,
+      }
+    };
   }
 }

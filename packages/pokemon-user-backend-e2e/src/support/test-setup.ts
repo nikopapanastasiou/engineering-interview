@@ -1,10 +1,12 @@
 /* eslint-disable */
 
-import axios from 'axios';
-
+/**
+ * Test setup that runs before each test file
+ * 
+ * Note: We use NestJS Testing Module with supertest instead of axios,
+ * so this file is kept minimal. The actual app setup happens in test-app.ts
+ */
 module.exports = async function () {
-  // Configure axios for tests to use.
-  const host = process.env.HOST ?? 'localhost';
-  const port = process.env.PORT ?? '3000';
-  axios.defaults.baseURL = `http://${host}:${port}`;
+  // Environment setup if needed
+  process.env.NODE_ENV = 'test';
 };

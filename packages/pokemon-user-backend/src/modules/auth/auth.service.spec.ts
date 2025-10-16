@@ -70,7 +70,14 @@ describe('AuthService', () => {
         email: newUser.email,
         displayName: newUser.displayName,
       });
-      expect(result).toEqual({ access_token: 'mock.access.token' });
+      expect(result).toEqual({ 
+        access_token: 'mock.access.token',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          displayName: newUser.displayName,
+        }
+      });
     });
 
     it('should propagate errors from profile service', async () => {
@@ -99,7 +106,14 @@ describe('AuthService', () => {
         email: mockProfile.email,
         displayName: mockProfile.displayName,
       });
-      expect(result).toEqual(expectedToken);
+      expect(result).toEqual({
+        access_token: expectedToken.access_token,
+        user: {
+          id: mockProfile.id,
+          email: mockProfile.email,
+          displayName: mockProfile.displayName,
+        }
+      });
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
