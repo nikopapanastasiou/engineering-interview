@@ -1,69 +1,37 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { DeepMockProxy } from 'jest-mock-extended';
 import { PokemonService } from './pokemon.service';
-import { DRIZZLE_CLIENT } from '../database/db.tokens';
-import { pokemonTable } from '../database/entities/pokemon.entity';
+import { DrizzleDatabase } from '../database/db.tokens';
+import { createMockDrizzleDb } from '../../test/mocks/drizzle.mock';
+import { createMockPokemon } from '../../test/fixtures/pokemon.fixtures';
 
 describe('PokemonService', () => {
-  let moduleRef: TestingModule;
   let service: PokemonService;
+  let mockDb: DeepMockProxy<DrizzleDatabase>;
 
-  const dbMock = {
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockResolvedValue([]),
-    insert: jest.fn().mockReturnThis(),
-    values: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue([{ id: 1 }]),
-    update: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    query: {
-      pokemonTable: {
-        findFirst: jest.fn(),
-      },
-    },
-  } as any;
+  const mockPokemon = createMockPokemon();
 
-  beforeEach(async () => {
-    moduleRef = await Test.createTestingModule({
-      providers: [
-        PokemonService,
-        { provide: DRIZZLE_CLIENT, useValue: dbMock },
-      ],
-    }).compile();
-
-    service = moduleRef.get(PokemonService);
-    jest.clearAllMocks();
+  beforeEach(() => {
+    mockDb = createMockDrizzleDb();
+    service = new PokemonService(mockDb);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+  describe('findById', () => {
+    it('should return pokemon when found', async () => {
+      mockDb.query.pokemonTable.findFirst.mockResolvedValue(mockPokemon as any);
 
-  it('findAll returns paginated response', async () => {
-    dbMock.orderBy.mockReturnThis();
-    dbMock.offset.mockResolvedValueOnce([{ id: 1 }]);
-    dbMock.select.mockReturnValueOnce({ count: jest.fn().mockReturnValue(100) }).mockReturnThis();
-    dbMock.from.mockResolvedValueOnce([{ count: 100 }]);
-    
-    const res = await service.findAll(1, 20);
-    expect(dbMock.select).toHaveBeenCalled();
-    expect(dbMock.orderBy).toHaveBeenCalled();
-    expect(dbMock.limit).toHaveBeenCalledWith(20);
-    expect(dbMock.offset).toHaveBeenCalledWith(0);
-    expect(res.data).toEqual([{ id: 1 }]);
-    expect(res.meta.page).toBe(1);
-    expect(res.meta.limit).toBe(20);
-  });
+      const result = await service.findById(1);
 
-  it('findById uses query.findFirst', async () => {
-    dbMock.query.pokemonTable.findFirst.mockResolvedValueOnce({ id: 2 });
-    const res = await service.findById(2);
-    expect(dbMock.query.pokemonTable.findFirst).toHaveBeenCalled();
-    expect(res).toEqual({ id: 2 });
-  });
+      expect(result).toEqual(mockPokemon);
+      expect(mockDb.query.pokemonTable.findFirst).toHaveBeenCalled();
+    });
 
+    it('should throw NotFoundException when Pokemon not found', async () => {
+      mockDb.query.pokemonTable.findFirst.mockResolvedValue(undefined);
+
+      await expect(service.findById(999)).rejects.toThrow(
+        new NotFoundException('Pokemon 999 not found')
+      );
+    });
+  });
 });

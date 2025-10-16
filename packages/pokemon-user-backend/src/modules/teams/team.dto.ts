@@ -2,10 +2,6 @@ import { IsArray, IsOptional, IsString, IsUUID, ValidateNested, IsInt, Min } fro
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTeamDto {
-  @ApiProperty({ description: 'User ID (auto-filled from JWT)', format: 'uuid' })
-  @IsUUID()
-  userId: string;
-
   @ApiProperty({ example: 'My Elite Four Team', description: 'Team name' })
   @IsString()
   name: string;

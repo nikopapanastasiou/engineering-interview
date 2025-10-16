@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './modules/app/app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { DATABASE_POOL } from './modules/database/db.tokens';
 
 async function bootstrap() {
   process.on('uncaughtException', (error) => {
@@ -12,6 +13,17 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create(AppModule);
+  
+  // Verify database connection (assumes DB is already set up)
+  try {
+    const dbPool = app.get(DATABASE_POOL);
+    const client = await dbPool.connect();
+    Logger.log('✅ Database connected successfully');
+    client.release();
+  } catch (error) {
+    Logger.error('❌ Database connection failed. Make sure database is running and migrations are applied:', error);
+    process.exit(1);
+  }
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

@@ -21,6 +21,28 @@
           "buildTarget": "pokemon-user-backend:build:production"
         }
       }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/packages/pokemon-user-backend"],
+      "options": {
+        "jestConfig": "packages/pokemon-user-backend/jest.config.ts"
+      }
+    },
+    "test:watch": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "packages/pokemon-user-backend/jest.config.ts",
+        "watch": true
+      }
+    },
+    "test:coverage": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "packages/pokemon-user-backend/jest.config.ts",
+        "coverage": true,
+        "coverageReporters": ["text", "lcov", "html"]
+      }
     }
   }
 }

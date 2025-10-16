@@ -40,3 +40,7 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+
+# testing output
+coverage/**
+packages/pokemon-user-backend/coverage/**

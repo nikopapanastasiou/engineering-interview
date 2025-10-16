@@ -90,10 +90,19 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
           setCurrentTeamId(created.id);
         }
       })
-      .catch((err) => console.error('Failed to create team on backend:', err));
+      .catch((err) => {
+        console.error('Failed to create team on backend:', err);
+        // Rollback optimistic update on error
+        setTeams((ts) => ts.filter((t) => t.id !== tempId));
+        if (currentTeamId === tempId) {
+          setCurrentTeamId(null);
+        }
+        // Re-throw so caller can handle if needed
+        throw err;
+      });
     
     return team;
-  }, []);
+  }, [currentTeamId]);
 
   const renameTeam = useCallback((id: string, name: string) => {
     setTeams((ts) => ts.map((t) => (t.id === id ? { ...t, name } : t)));

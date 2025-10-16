@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Heading, Text, Input, ErrorText, Grid } from './ui';
 import { Overlay, Modal, PokemonId, TypeBadge, COLORS } from './shared';
 import { CloseIcon } from './icons';
 import { Pokemon } from '../types/pokemon';
-import { PokemonService } from '../services/PokemonService';
+import { usePokemon } from '../hooks/usePokemon';
 
 // Types
 export interface Team {
@@ -203,6 +203,17 @@ const CloseButton = styled.button`
 const ScrollableGrid = styled.div`
   max-height: 55vh;
   overflow-y: auto;
+  
+  /* Add smooth scrolling */
+  scroll-behavior: smooth;
+`;
+
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  color: ${COLORS.textSecondary};
+  font-size: 14px;
 `;
 
 export function AddPokemonModal({ 
@@ -211,30 +222,47 @@ export function AddPokemonModal({
   onAddPokemon, 
   onRemoveMember 
 }: AddPokemonModalProps) {
-  const [allPokemon, setAllPokemon] = useState<Pokemon[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const scrollableRef = useRef<HTMLDivElement>(null);
 
-  // Fetch Pokemon when modal opens
-  useEffect(() => {
-    if (allPokemon.length === 0) {
-      setLoading(true);
-      setError(null);
-      
-      PokemonService.fetchManyPokemon(1000)
-        .then((pokemon) => setAllPokemon(pokemon))
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false));
+  // Use infinite scroll hook
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = usePokemon({ 
+    limit: 50, 
+    search: searchQuery.trim() || undefined 
+  });
+
+  // Get all Pokemon from paginated data
+  const allPokemon = data?.pokemon || [];
+
+  // Infinite scroll logic
+  const handleScroll = useCallback(() => {
+    const container = scrollableRef.current;
+    if (!container || !hasNextPage || isFetchingNextPage) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+    // Load next page when 90% scrolled
+    if (scrollPercentage > 0.9) {
+      fetchNextPage();
     }
-  }, [allPokemon.length]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  // Filter Pokemon based on search query
-  const filteredPokemon = useMemo(() => {
-    const s = searchQuery.trim().toLowerCase();
-    if (!s) return allPokemon;
-    return allPokemon.filter((p) => p.name.includes(s) || String(p.id) === s);
-  }, [searchQuery, allPokemon]);
+  // Attach scroll listener
+  useEffect(() => {
+    const container = scrollableRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   const handleAddPokemon = (pokemon: Pokemon) => {
     if (team.members.length >= 6) {
@@ -301,12 +329,12 @@ export function AddPokemonModal({
               style={{ marginBottom: 16 }}
             />
 
-            {loading && <Text>Loading Pokémon...</Text>}
-            {error && <ErrorText>{error}</ErrorText>}
+            {isLoading && <Text>Loading Pokémon...</Text>}
+            {error && <ErrorText>Error loading Pokémon: {error.message}</ErrorText>}
 
-            <ScrollableGrid>
+            <ScrollableGrid ref={scrollableRef}>
               <Grid cols={130}>
-                {filteredPokemon.map((pokemon) => {
+                {allPokemon.map((pokemon) => {
                   const isOnTeam = team.members.some((m) => m.id === pokemon.id);
                   const spriteUrl = pokemon.sprites?.front_default || 
                     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
@@ -332,7 +360,7 @@ export function AddPokemonModal({
                       <PokemonId>#{pokemon.id}</PokemonId>
                       <SearchPokemonName>{pokemon.name}</SearchPokemonName>
                       <div>
-                        {pokemon.types?.slice(0, 2).map((type) => (
+                        {pokemon.types?.slice(0, 2).map((type: string) => (
                           <SmallTypeBadge key={type} type={type}>
                             {type}
                           </SmallTypeBadge>
@@ -342,6 +370,16 @@ export function AddPokemonModal({
                   );
                 })}
               </Grid>
+              
+              {/* Loading indicator for infinite scroll */}
+              {isFetchingNextPage && (
+                <LoadingSpinner>Loading more Pokémon...</LoadingSpinner>
+              )}
+              
+              {/* End indicator */}
+              {!hasNextPage && allPokemon.length > 0 && (
+                <LoadingSpinner>All Pokémon loaded</LoadingSpinner>
+              )}
             </ScrollableGrid>
           </SearchSection>
         </ModalContent>
